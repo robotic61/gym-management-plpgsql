@@ -5,7 +5,7 @@
 --  -1  = login failed (wrong email or password)
 
 -- Note: requires extension pgcrypto for crypt() function:
---   CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE OR REPLACE FUNCTION fn_login(
     p_email    TEXT,

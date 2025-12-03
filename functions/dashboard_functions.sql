@@ -62,30 +62,33 @@ $$;
 
 
 CREATE OR REPLACE FUNCTION fn_get_today_classes(p_gym_id INT)
-RETURNS TABLE(
-    class_name   TEXT,
-    start_time   TIME,
-    trainer_name TEXT,
-    capacity     INT,
-    booked_count INT
+RETURNS TABLE (
+    class_name    TEXT,
+    start_time    TIME,
+    trainer_name  TEXT,
+    capacity      INT,
+    booked_count  INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT
+    SELECT 
         c.class_name,
         c.start_time,
         s.full_name AS trainer_name,
         c.capacity,
-        COALESCE(COUNT(b.booking_id), 0) AS booked_count
+        COUNT(b.booking_id)::INT AS booked_count   
     FROM classes c
-    LEFT JOIN staff s    ON c.trainer_id = s.staff_id
-    LEFT JOIN bookings b ON b.class_id  = c.class_id
-                         AND b.booking_status <> 'cancelled'
-    WHERE c.gym_id    = p_gym_id
+    LEFT JOIN staff s 
+        ON c.trainer_id = s.staff_id
+    LEFT JOIN bookings b 
+        ON b.class_id = c.class_id 
+       AND b.booking_status = 'confirmed'
+    WHERE c.gym_id = p_gym_id
       AND c.class_date = CURRENT_DATE
-    GROUP BY
+    GROUP BY 
+        c.class_id,
         c.class_name,
         c.start_time,
         s.full_name,
@@ -93,6 +96,7 @@ BEGIN
     ORDER BY c.start_time;
 END;
 $$;
+
 
 
 CREATE OR REPLACE FUNCTION fn_get_expiring_members_list(p_gym_id INT)

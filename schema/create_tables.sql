@@ -75,14 +75,6 @@ CREATE TABLE classes (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Trainer must be someone marked as a trainer
-ALTER TABLE classes
-ADD CONSTRAINT trainer_must_be_trainer
-CHECK (
-    trainer_id IS NULL OR 
-    trainer_id IN (SELECT staff_id FROM staff WHERE is_trainer = TRUE)
-);
-
 -- TABLE: bookings 
 CREATE TABLE bookings (
     booking_id SERIAL PRIMARY KEY,

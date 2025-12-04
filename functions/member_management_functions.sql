@@ -61,20 +61,31 @@ BEGIN
         m.full_name,
         m.email,
         m.phone,
+
         -- how many class bookings this member has ever made
-        (SELECT COUNT(*)
-         FROM bookings b
-         WHERE b.member_id = m.member_id) AS total_bookings,
-        (SELECT COALESCE(SUM(p.amount), 0)
-         FROM payments p
-         WHERE p.member_id = m.member_id
-           AND p.payment_status = 'paid') AS total_payments,
-        (SELECT COUNT(*)
-         FROM payments p
-         WHERE p.member_id = m.member_id
-           AND p.payment_status = 'pending'
-           AND p.due_date IS NOT NULL
-           AND p.due_date < CURRENT_DATE) AS overdue
+        (
+          SELECT COUNT(*)::INT
+          FROM bookings b
+          WHERE b.member_id = m.member_id
+        ) AS total_bookings,
+
+        -- total paid amount
+        (
+          SELECT COALESCE(SUM(p.amount), 0)
+          FROM payments p
+          WHERE p.member_id = m.member_id
+            AND p.payment_status = 'paid'
+        ) AS total_payments,
+
+        -- number of overdue unpaid payments
+        (
+          SELECT COUNT(*)::INT
+          FROM payments p
+          WHERE p.member_id = m.member_id
+            AND p.payment_status = 'pending'
+            AND p.due_date IS NOT NULL
+            AND p.due_date < CURRENT_DATE
+        ) AS overdue
     FROM members m
     WHERE m.member_id = p_member_id
       AND m.gym_id    = p_gym_id;

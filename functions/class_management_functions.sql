@@ -1,13 +1,13 @@
 -- 1) Class schedule for a gym
 CREATE OR REPLACE FUNCTION fn_get_class_schedule(p_gym_id INT)
 RETURNS TABLE (
-    class_id          INT,
-    class_name        TEXT,
-    class_date        DATE,
-    start_time        TIME,
-    capacity          INT,
-    trainer_name      TEXT,
-    booked_count      INT,
+    class_id            INT,
+    class_name          TEXT,
+    class_date          DATE,
+    start_time          TIME,
+    capacity            INT,
+    trainer_name        TEXT,
+    booked_count        INT,
     availability_status TEXT
 )
 LANGUAGE plpgsql
@@ -21,7 +21,7 @@ BEGIN
         c.start_time,
         c.capacity,
         COALESCE(s.full_name, 'Unassigned') AS trainer_name,
-        COALESCE(COUNT(b.booking_id), 0)    AS booked_count,
+        COALESCE(COUNT(b.booking_id), 0)::INT AS booked_count,   -- << cast here
         CASE
             WHEN COALESCE(COUNT(b.booking_id), 0) >= c.capacity
                 THEN 'Full'
@@ -44,6 +44,7 @@ BEGIN
     ORDER BY c.class_date, c.start_time;
 END;
 $$;
+
 
 -- 2) Bookings for a specific class
 CREATE OR REPLACE FUNCTION fn_get_class_bookings(p_class_id INT)

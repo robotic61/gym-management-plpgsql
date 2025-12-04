@@ -38,8 +38,8 @@ $$;
 
 
 CREATE OR REPLACE FUNCTION fn_get_monthly_revenue(p_gym_id INT)
-RETURNS TABLE(
-    total_revenue NUMERIC(10,2),
+RETURNS TABLE (
+    total_revenue NUMERIC,
     paid_count    INT,
     pending_count INT
 )
@@ -48,17 +48,16 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        COALESCE(SUM(CASE WHEN p.payment_status = 'paid'
-                          THEN p.amount ELSE 0 END), 0)::NUMERIC(10,2) AS total_revenue,
-        COUNT(CASE WHEN p.payment_status = 'paid' THEN 1 END)         AS paid_count,
-        COUNT(CASE WHEN p.payment_status = 'pending' THEN 1 END)      AS pending_count
+        COALESCE(SUM(CASE WHEN p.payment_status = 'paid' THEN p.amount ELSE 0 END), 0) AS total_revenue,
+        COUNT(*) FILTER (WHERE p.payment_status = 'paid')::INT AS paid_count,
+        COUNT(*) FILTER (WHERE p.payment_status = 'pending')::INT AS pending_count
     FROM payments p
-    JOIN members m ON p.member_id = m.member_id
+    JOIN members m ON m.member_id = p.member_id
     WHERE m.gym_id = p_gym_id
-      AND p.payment_date IS NOT NULL
       AND DATE_TRUNC('month', p.payment_date) = DATE_TRUNC('month', CURRENT_DATE);
 END;
 $$;
+
 
 
 CREATE OR REPLACE FUNCTION fn_get_today_classes(p_gym_id INT)

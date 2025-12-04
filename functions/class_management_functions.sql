@@ -229,81 +229,36 @@ $$;
 
 -- 5) Update an existing class
 CREATE OR REPLACE FUNCTION fn_update_class_details(
-    p_class_id     INT,
-    p_trainer_id   INT,
-    p_class_date   DATE,
-    p_start_time   TIME,
-    p_end_time     TIME,
-    p_capacity     INT,
-    p_description  TEXT,
-    p_status       TEXT
+    p_class_id        INT,
+    p_new_date        DATE,
+    p_new_start_time  TIME,
+    p_new_end_time    TIME,
+    p_new_capacity    INT,
+    p_new_trainer_id  INT,
+    p_new_description TEXT,
+    p_new_status      TEXT
 )
-RETURNS INT
-LANGUAGE plpgsql
+    RETURNS INT
+    LANGUAGE plpgsql
 AS $$
-DECLARE
-    v_gym_id      INT;
-    v_is_trainer  BOOLEAN;
-    v_has_overlap BOOLEAN;
 BEGIN
-    -- Get gym for this class
-    SELECT gym_id
-    INTO v_gym_id
-    FROM classes
+    UPDATE classes
+    SET
+        class_date   = p_new_date,
+        start_time   = p_new_start_time,
+        end_time     = p_new_end_time,
+        capacity     = p_new_capacity,
+        trainer_id   = p_new_trainer_id,
+        description  = p_new_description,
+        status       = p_new_status
     WHERE class_id = p_class_id;
+
 
     IF NOT FOUND THEN
         RETURN -1;  -- class not found
     END IF;
 
-    -- Validate trainer if provided
-    IF p_trainer_id IS NOT NULL THEN
-        SELECT EXISTS (
-            SELECT 1
-            FROM staff
-            WHERE staff_id = p_trainer_id
-              AND gym_id   = v_gym_id
-              AND is_trainer = TRUE
-        ) INTO v_is_trainer;
-
-        IF NOT v_is_trainer THEN
-            RETURN -1;
-        END IF;
-    END IF;
-
-    -- Check overlapping schedule for this trainer (ignore this class itself)
-    IF p_trainer_id IS NOT NULL AND p_class_date IS NOT NULL THEN
-        SELECT EXISTS (
-            SELECT 1
-            FROM classes c
-            WHERE c.trainer_id = p_trainer_id
-              AND c.class_date = p_class_date
-              AND c.class_id  <> p_class_id
-              AND c.status <> 'cancelled'
-              AND (
-                    COALESCE(p_start_time, c.start_time)
-                    < COALESCE(c.end_time, p_end_time)
-                AND c.start_time
-                    < COALESCE(p_end_time, c.end_time)
-              )
-        ) INTO v_has_overlap;
-
-        IF v_has_overlap THEN
-            RETURN -1;
-        END IF;
-    END IF;
-
-    -- Apply updates (only override fields that are not NULL)
-    UPDATE classes
-    SET trainer_id  = COALESCE(p_trainer_id, trainer_id),
-        class_date  = COALESCE(p_class_date, class_date),
-        start_time  = COALESCE(p_start_time, start_time),
-        end_time    = COALESCE(p_end_time, end_time),
-        capacity    = COALESCE(p_capacity, capacity),
-        description = COALESCE(p_description, description),
-        status      = COALESCE(p_status, status)
-    WHERE class_id = p_class_id;
-
-    RETURN 0;
+    RETURN 0;  -- success
 END;
 $$;
+
